@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": ".",
+  "functions": {
+    "packages/api/src/index.ts": {
+      "runtime": "@vercel/node"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/packages/api/src/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/packages/admin/dist/$1"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.vercel
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+package-lock.json
+.prisma

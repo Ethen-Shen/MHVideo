@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String?   @unique
+  phone           String?   @unique
+  passwordHash    String?
+  nickname        String
+  avatarUrl       String?
+  locale          String    @default("zh-CN")
+  themePreference String    @default("light")
+  status          String    @default("active") // active, banned
+  wechatOpenid    String?   @unique
+  douyinOpenid    String?   @unique
+  tiktokOpenid    String?   @unique
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  comments     Comment[]
+  likes        Like[]
+  favorites    Favorite[]
+  folders      FavoriteFolder[]
+  ratings      Rating[]
+  watchHistory WatchHistory[]
+
+  @@map("users")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("editor") // super_admin, editor
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("admin_users")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  iconUrl   String?  @map("icon_url")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  videos  Video[]
+  series  Series[]
+
+  @@map("categories")
+}
+
+model Series {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  coverUrl    String?  @map("cover_url")
+  status      String   @default("draft") // published, draft
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  categoryId String?   @map("category_id")
+  category   Category? @relation(fields: [categoryId], references: [id])
+  videos     Video[]
+
+  tags SeriesTag[]
+
+  @@map("series")
+}
+
+model SeriesTag {
+  id       String @id @default(cuid())
+  seriesId String @map("series_id")
+  tag      String
+
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([seriesId, tag])
+  @@map("series_tags")
+}
+
+model Video {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  coverUrl      String?  @map("cover_url")
+  videoUrl      String?  @map("video_url")
+  duration      Int      @default(0) // 秒
+  episodeNumber Int      @default(1) @map("episode_number")
+  viewCount     Int      @default(0) @map("view_count")
+  likeCount     Int      @default(0) @map("like_count")
+  status        String   @default("draft") // published, draft
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  seriesId  String?  @map("series_id")
+  series    Series?  @relation(fields: [seriesId], references: [id])
+  categoryId String?    @map("category_id")
+  category   Category?  @relation(fields: [categoryId], references: [id])
+
+  comments     Comment[]
+  likes        Like[]
+  favorites    Favorite[]
+  ratings      Rating[]
+  watchHistory WatchHistory[]
+
+  tags VideoTag[]
+
+  @@index([seriesId, episodeNumber])
+  @@index([status])
+  @@index([categoryId])
+  @@map("videos")
+}
+
+model VideoTag {
+  id      String @id @default(cuid())
+  videoId String @map("video_id")
+  tag     String
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, tag])
+  @@map("video_tags")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  parentId  String?  @map("parent_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userId  String @map("user_id")
+  user    User   @relation(fields: [userId], references: [id])
+  videoId String @map("video_id")
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  replies Comment[] @relation("CommentReplies")
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+
+  @@index([videoId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId  String @map("user_id")
+  user    User   @relation(fields: [userId], references: [id])
+  videoId String @map("video_id")
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@map("likes")
+}
+
+model FavoriteFolder {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId    String     @map("user_id")
+  user      User       @relation(fields: [userId], references: [id])
+  favorites Favorite[]
+
+  @@map("favorite_folders")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId   String          @map("user_id")
+  user     User            @relation(fields: [userId], references: [id])
+  videoId  String          @map("video_id")
+  video    Video           @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  folderId String?         @map("folder_id")
+  folder   FavoriteFolder? @relation(fields: [folderId], references: [id])
+
+  @@unique([userId, videoId])
+  @@map("favorites")
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  score     Int      // 1-5
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId  String @map("user_id")
+  user    User   @relation(fields: [userId], references: [id])
+  videoId String @map("video_id")
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@map("ratings")
+}
+
+model WatchHistory {
+  id        String   @id @default(cuid())
+  progress  Int      @default(0) // 秒
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId  String @map("user_id")
+  user    User   @relation(fields: [userId], references: [id])
+  videoId String @map("video_id")
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([userId])
+  @@map("watch_history")
+}
