@@ -4,7 +4,7 @@
   "outputDirectory": ".",
   "functions": {
     "packages/api/src/index.ts": {
-      "runtime": "@vercel/node"
+      "runtime": "nodejs20.x"
     }
   },
   "routes": [
