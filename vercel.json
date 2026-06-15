@@ -3,7 +3,7 @@
   "buildCommand": "npm run vercel-build",
   "outputDirectory": ".",
   "functions": {
-    "packages/api/src/index.ts": {
+    "api/index.ts": {
       "memory": 1024,
       "maxDuration": 10
     }
@@ -11,7 +11,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/packages/api/src/index.ts"
+      "dest": "/api/index.ts"
     },
     {
       "src": "/(.*)",
