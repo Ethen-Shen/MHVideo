@@ -4,7 +4,8 @@
   "outputDirectory": ".",
   "functions": {
     "packages/api/src/index.ts": {
-      "runtime": "nodejs20.x"
+      "memory": 1024,
+      "maxDuration": 10
     }
   },
   "routes": [
