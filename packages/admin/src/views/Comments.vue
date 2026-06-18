@@ -18,8 +18,11 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="comments.length === 0" class="bg-white rounded-lg shadow p-12 text-center text-gray-400">
-      暂无评论数据
+    <div v-else-if="comments.length === 0" class="bg-white rounded-lg shadow p-12 text-center">
+      <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+      </svg>
+      <p class="text-gray-400">暂无评论数据</p>
     </div>
 
     <!-- 评论表格 -->
@@ -35,15 +38,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(comment, idx) in comments" :key="comment.id" :class="idx % 2 === 1 ? 'bg-gray-50' : ''" class="hover:bg-blue-50">
+          <tr v-for="(comment, idx) in comments" :key="comment.id" class="border-b last:border-0 hover:bg-gray-50">
             <td class="px-4 py-3">
               <div class="flex items-center gap-2">
-                <img v-if="comment.userAvatar" :src="comment.userAvatar" alt="" class="w-7 h-7 rounded-full object-cover" />
-                <div v-else class="w-7 h-7 rounded-full bg-gray-300 flex items-center justify-center text-white text-xs">{{ (comment.userName || '?')[0] }}</div>
-                <span class="text-gray-800">{{ comment.userName || '未知用户' }}</span>
+                <img v-if="comment.user?.avatarUrl" :src="comment.user.avatarUrl" alt="" class="w-7 h-7 rounded-full object-cover" />
+                <div v-else class="w-7 h-7 rounded-full bg-gray-300 flex items-center justify-center text-white text-xs">{{ (comment.user?.nickname || '?')[0] }}</div>
+                <span class="text-gray-800">{{ comment.user?.nickname || '未知用户' }}</span>
               </div>
             </td>
-            <td class="px-4 py-3 text-gray-500 max-w-[200px] truncate">{{ comment.videoTitle || '-' }}</td>
+            <td class="px-4 py-3 text-gray-500 max-w-[200px] truncate">{{ comment.video?.title || '-' }}</td>
             <td class="px-4 py-3 max-w-[300px]">
               <template v-if="expandedIds.has(comment.id)">
                 <span class="text-gray-700">{{ comment.content }}</span>
@@ -177,7 +180,7 @@ async function handleDelete() {
 async function fetchComments() {
   loading.value = true;
   try {
-    const params: any = { page: page.value, pageSize };
+    const params: any = { page: page.value, limit: pageSize };
     if (searchUser.value) params.userName = searchUser.value;
     if (filterVideo.value) params.videoId = filterVideo.value;
     const res = (await getAdminComments(params)) as any;
@@ -194,9 +197,9 @@ async function fetchComments() {
 
 async function fetchVideoOptions() {
   try {
-    const res = (await getVideos({ pageSize: 200 })) as any;
-    const data = res.data ?? res;
-    videoOptions.value = data.list ?? data.items ?? data.videos ?? [];
+    const res = (await getVideos({ limit: 200 })) as any;
+    const list = Array.isArray(res.data) ? res.data : (res.data?.list ?? []);
+    videoOptions.value = list;
   } catch { /* ignore */ }
 }
 

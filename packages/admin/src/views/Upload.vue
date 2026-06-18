@@ -262,9 +262,9 @@ function copyUrl(url: string) {
 
 async function fetchSeries() {
   try {
-    const res = (await getSeriesList({ pageSize: 200 })) as any;
-    const data = res.data ?? res;
-    seriesList.value = data.list ?? data.items ?? data.series ?? [];
+    const res = (await getSeriesList({ limit: 200 })) as any;
+    const list = Array.isArray(res.data) ? res.data : (res.data?.list ?? []);
+    seriesList.value = list;
   } catch { /* ignore */ }
 }
 

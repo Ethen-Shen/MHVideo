@@ -11,7 +11,8 @@
     "build:miniapp": "pnpm --filter @mhvideo/miniapp build",
     "lint": "eslint packages/*/src --ext .ts,.vue",
     "format": "prettier --write \"packages/*/src/**/*.{ts,vue,json,css}\"",
-    "vercel-build": "pnpm install && pnpm --filter @mhvideo/api exec prisma generate && pnpm --filter @mhvideo/api build && pnpm --filter @mhvideo/admin build"
+    "vercel-build": "pnpm install && pnpm --filter @mhvideo/api exec prisma generate && pnpm --filter @mhvideo/api build && pnpm --filter @mhvideo/admin build",
+    "db:seed": "pnpm --filter @mhvideo/api exec prisma db seed"
   },
   "engines": {
     "node": ">=18.0.0",

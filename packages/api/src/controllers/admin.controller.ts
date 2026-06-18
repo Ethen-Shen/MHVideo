@@ -27,6 +27,7 @@ export async function getDashboard(_req: Request, res: Response) {
             viewCount: true,
             status: true,
             createdAt: true,
+            series: { select: { title: true } },
           },
         }),
         prisma.video.findMany({

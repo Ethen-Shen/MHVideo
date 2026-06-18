@@ -8,11 +8,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!token.value);
 
-  async function login(email: string, password: string) {
-    const res = await adminLogin(email, password) as any;
-    token.value = res.data.token;
+  async function login(account: string, password: string) {
+    const res = await adminLogin(account, password) as any;
+    token.value = res.data.access_token;
     adminInfo.value = res.data.admin;
-    localStorage.setItem('admin_token', res.data.token);
+    localStorage.setItem('admin_token', res.data.access_token);
     localStorage.setItem('admin_info', JSON.stringify(res.data.admin));
   }
 

@@ -18,7 +18,7 @@
           </div>
           <div>
             <h3 class="text-gray-500 text-sm font-medium">总视频数</h3>
-            <p class="text-3xl font-bold mt-1">{{ stats.totalVideos }}</p>
+            <p class="text-3xl font-bold mt-1">{{ formatNumber(stats.totalVideos) }}</p>
           </div>
         </div>
         <div class="bg-white rounded-lg shadow p-6 flex items-center gap-4">
@@ -29,7 +29,7 @@
           </div>
           <div>
             <h3 class="text-gray-500 text-sm font-medium">总用户数</h3>
-            <p class="text-3xl font-bold mt-1">{{ stats.totalUsers }}</p>
+            <p class="text-3xl font-bold mt-1">{{ formatNumber(stats.totalUsers) }}</p>
           </div>
         </div>
         <div class="bg-white rounded-lg shadow p-6 flex items-center gap-4">
@@ -40,7 +40,7 @@
           </div>
           <div>
             <h3 class="text-gray-500 text-sm font-medium">总系列数</h3>
-            <p class="text-3xl font-bold mt-1">{{ stats.totalSeries }}</p>
+            <p class="text-3xl font-bold mt-1">{{ formatNumber(stats.totalSeries) }}</p>
           </div>
         </div>
         <div class="bg-white rounded-lg shadow p-6 flex items-center gap-4">
@@ -52,7 +52,7 @@
           </div>
           <div>
             <h3 class="text-gray-500 text-sm font-medium">今日播放量</h3>
-            <p class="text-3xl font-bold mt-1">{{ stats.todayPlays }}</p>
+            <p class="text-3xl font-bold mt-1">{{ formatNumber(stats.todayViews) }}</p>
           </div>
         </div>
       </div>
@@ -62,7 +62,12 @@
         <!-- 最近添加的视频 -->
         <div class="bg-white rounded-lg shadow p-6">
           <h3 class="text-lg font-semibold mb-4">最近添加的视频</h3>
-          <div v-if="recentVideos.length === 0" class="text-gray-400 text-center py-8">暂无数据</div>
+          <div v-if="recentVideos.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400">
+            <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <span class="text-sm">暂无数据</span>
+          </div>
           <table v-else class="w-full text-sm">
             <thead>
               <tr class="border-b text-left text-gray-500">
@@ -75,7 +80,7 @@
             <tbody>
               <tr v-for="video in recentVideos" :key="video.id" class="border-b last:border-0 hover:bg-gray-50">
                 <td class="py-3">{{ video.title }}</td>
-                <td class="py-3 text-gray-500">{{ video.seriesName || '-' }}</td>
+                <td class="py-3 text-gray-500">{{ video.series?.title || '-' }}</td>
                 <td class="py-3">
                   <span :class="video.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'" class="px-2 py-0.5 rounded text-xs">
                     {{ video.status === 'published' ? '已发布' : '草稿' }}
@@ -90,7 +95,12 @@
         <!-- 热门视频 -->
         <div class="bg-white rounded-lg shadow p-6">
           <h3 class="text-lg font-semibold mb-4">热门视频 Top 5</h3>
-          <div v-if="topVideos.length === 0" class="text-gray-400 text-center py-8">暂无数据</div>
+          <div v-if="topVideos.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400">
+            <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <span class="text-sm">暂无数据</span>
+          </div>
           <table v-else class="w-full text-sm">
             <thead>
               <tr class="border-b text-left text-gray-500">
@@ -108,8 +118,8 @@
                   </span>
                 </td>
                 <td class="py-3">{{ video.title }}</td>
-                <td class="py-3 text-gray-500">{{ video.playCount ?? 0 }}</td>
-                <td class="py-3 text-gray-500">{{ video.likeCount ?? 0 }}</td>
+                <td class="py-3 text-gray-500">{{ formatNumber(video.viewCount) }}</td>
+                <td class="py-3 text-gray-500">{{ formatNumber(video.likeCount) }}</td>
               </tr>
             </tbody>
           </table>
@@ -128,10 +138,17 @@ const stats = ref({
   totalVideos: 0,
   totalUsers: 0,
   totalSeries: 0,
-  todayPlays: 0,
+  todayViews: 0,
 });
 const recentVideos = ref<any[]>([]);
 const topVideos = ref<any[]>([]);
+
+function formatNumber(n: number) {
+  if (n == null) return '0';
+  if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + '万';
+  if (n >= 1000) return n.toLocaleString();
+  return String(n);
+}
 
 function formatDate(dateStr: string) {
   if (!dateStr) return '-';
@@ -148,7 +165,7 @@ async function fetchData() {
       totalVideos: data.totalVideos ?? 0,
       totalUsers: data.totalUsers ?? 0,
       totalSeries: data.totalSeries ?? 0,
-      todayPlays: data.todayPlays ?? 0,
+      todayViews: data.todayViews ?? 0,
     };
     recentVideos.value = data.recentVideos ?? [];
     topVideos.value = data.topVideos ?? [];

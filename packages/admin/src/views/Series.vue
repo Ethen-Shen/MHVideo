@@ -21,8 +21,11 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="series.length === 0" class="bg-white rounded-lg shadow p-12 text-center text-gray-400">
-      暂无系列数据
+    <div v-else-if="series.length === 0" class="bg-white rounded-lg shadow p-12 text-center">
+      <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+      </svg>
+      <p class="text-gray-400">暂无系列数据</p>
     </div>
 
     <!-- 系列表格 -->
@@ -40,14 +43,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(item, idx) in series" :key="item.id" :class="idx % 2 === 1 ? 'bg-gray-50' : ''" class="hover:bg-blue-50">
+          <tr v-for="item in series" :key="item.id" class="border-b last:border-0 hover:bg-gray-50">
             <td class="px-4 py-3">
               <img v-if="item.coverUrl" :src="item.coverUrl" alt="" class="w-16 h-10 object-cover rounded" />
               <div v-else class="w-16 h-10 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">无</div>
             </td>
             <td class="px-4 py-3 font-medium text-gray-800">{{ item.title }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ item.categoryName || '-' }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ item.videoCount ?? 0 }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ item.category?.name || '-' }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ formatNumber(item.videoCount) }}</td>
             <td class="px-4 py-3">
               <span :class="item.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'" class="px-2 py-0.5 rounded text-xs">
                 {{ item.status === 'published' ? '已发布' : '草稿' }}
@@ -135,7 +138,12 @@
           <div v-if="episodesLoading" class="flex items-center justify-center py-10">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
-          <div v-else-if="episodes.length === 0" class="text-gray-400 text-center py-8">暂无剧集</div>
+          <div v-else-if="episodes.length === 0" class="text-center py-8">
+            <svg class="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
+            <p class="text-gray-400">暂无剧集</p>
+          </div>
           <table v-else class="w-full text-sm">
             <thead class="bg-gray-50">
               <tr class="text-left text-gray-500">
@@ -146,10 +154,10 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(ep, idx) in episodes" :key="ep.id" :class="idx % 2 === 1 ? 'bg-gray-50' : ''" class="hover:bg-blue-50">
-                <td class="px-4 py-3">{{ ep.episode ?? idx + 1 }}</td>
+              <tr v-for="(ep, idx) in episodes" :key="ep.id" class="border-b last:border-0 hover:bg-gray-50">
+                <td class="px-4 py-3">{{ ep.episodeNumber ?? idx + 1 }}</td>
                 <td class="px-4 py-3 font-medium text-gray-800">{{ ep.title }}</td>
-                <td class="px-4 py-3 text-gray-500">{{ ep.playCount ?? 0 }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ formatNumber(ep.viewCount) }}</td>
                 <td class="px-4 py-3">
                   <span :class="ep.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'" class="px-2 py-0.5 rounded text-xs">
                     {{ ep.status === 'published' ? '已发布' : '草稿' }}
@@ -215,6 +223,12 @@ function formatDate(dateStr: string) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+function formatNumber(n: number | undefined | null) {
+  if (n == null) return '0';
+  if (n >= 10000) return (n / 10000).toFixed(1) + '万';
+  return n.toLocaleString();
+}
+
 function goPage(p: number) {
   if (p < 1 || p > totalPages.value) return;
   page.value = p;
@@ -275,9 +289,9 @@ async function viewEpisodes(item: any) {
   showEpisodes.value = true;
   episodesLoading.value = true;
   try {
-    const res = (await getVideos({ seriesId: item.id, pageSize: 200 })) as any;
-    const data = res.data ?? res;
-    episodes.value = data.list ?? data.items ?? data.videos ?? [];
+    const res = (await getVideos({ seriesId: item.id, limit: 200 })) as any;
+    const list = Array.isArray(res.data) ? res.data : (res.data?.list ?? []);
+    episodes.value = list;
   } catch {
     episodes.value = [];
   } finally {
@@ -288,13 +302,13 @@ async function viewEpisodes(item: any) {
 async function fetchSeries() {
   loading.value = true;
   try {
-    const params: any = { page: page.value, pageSize };
+    const params: any = { page: page.value, limit: pageSize };
     if (searchTitle.value) params.title = searchTitle.value;
-    if (filterCategory.value) params.categoryId = filterCategory.value;
+    if (filterCategory.value) params.category = filterCategory.value;
     const res = (await getSeriesList(params)) as any;
-    const data = res.data ?? res;
-    series.value = data.list ?? data.items ?? data.series ?? [];
-    total.value = data.total ?? series.value.length;
+    const list = Array.isArray(res.data) ? res.data : (res.data?.list ?? []);
+    series.value = list;
+    total.value = res.pagination?.total ?? res.total ?? list.length;
   } catch {
     series.value = [];
     total.value = 0;

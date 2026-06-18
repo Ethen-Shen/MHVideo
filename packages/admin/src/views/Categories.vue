@@ -11,8 +11,11 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="categories.length === 0" class="bg-white rounded-lg shadow p-12 text-center text-gray-400">
-      暂无分类数据
+    <div v-else-if="categories.length === 0" class="bg-white rounded-lg shadow p-12 text-center">
+      <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+      </svg>
+      <p class="text-gray-400">暂无分类数据</p>
     </div>
 
     <!-- 分类表格 -->
@@ -28,14 +31,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(cat, idx) in categories" :key="cat.id" :class="idx % 2 === 1 ? 'bg-gray-50' : ''" class="hover:bg-blue-50">
+          <tr v-for="(cat, idx) in categories" :key="cat.id" class="border-b last:border-0 hover:bg-gray-50">
             <td class="px-4 py-3 font-medium text-gray-800">{{ cat.name }}</td>
             <td class="px-4 py-3">
               <img v-if="cat.iconUrl" :src="cat.iconUrl" alt="" class="w-8 h-8 object-contain rounded" />
               <span v-else class="text-gray-400">-</span>
             </td>
-            <td class="px-4 py-3 text-gray-500">{{ cat.sort ?? 0 }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ cat.videoCount ?? 0 }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ cat.sortOrder ?? 0 }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ formatNumber(cat.videoCount) }}</td>
             <td class="px-4 py-3">
               <div class="flex gap-2 items-center">
                 <button @click="moveUp(idx)" :disabled="idx === 0" class="text-gray-500 hover:text-gray-700 disabled:opacity-30 text-xs" title="上移">↑</button>
@@ -67,7 +70,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">排序（数字越小越靠前）</label>
-                <input v-model.number="form.sort" type="number" min="0" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                <input v-model.number="form.sortOrder" type="number" min="0" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
               </div>
             </div>
             <div class="flex justify-end gap-3 mt-6">
@@ -113,14 +116,20 @@ const editingId = ref('');
 const form = ref({
   name: '',
   iconUrl: '',
-  sort: 0,
+  sortOrder: 0,
 });
 
 const showDeleteConfirm = ref(false);
 const deleteTarget = ref<any>(null);
 
+function formatNumber(n: number | undefined | null) {
+  if (n == null) return '0';
+  if (n >= 10000) return (n / 10000).toFixed(1) + '万';
+  return n.toLocaleString();
+}
+
 function resetForm() {
-  form.value = { name: '', iconUrl: '', sort: 0 };
+  form.value = { name: '', iconUrl: '', sortOrder: 0 };
 }
 
 function openCreate() {
@@ -136,7 +145,7 @@ function openEdit(cat: any) {
   form.value = {
     name: cat.name || '',
     iconUrl: cat.iconUrl || '',
-    sort: cat.sort ?? 0,
+    sortOrder: cat.sortOrder ?? 0,
   };
   showModal.value = true;
 }
@@ -148,7 +157,7 @@ async function handleSave() {
     const data = {
       name: form.value.name,
       iconUrl: form.value.iconUrl,
-      sort: form.value.sort,
+      sortOrder: form.value.sortOrder,
     };
     if (isEditing.value) {
       await updateCategory(editingId.value, data);
@@ -189,8 +198,8 @@ async function moveUp(idx: number) {
   const prevCat = categories.value[idx - 1];
   try {
     await Promise.all([
-      updateCategory(cat.id, { sort: prevCat.sort ?? idx - 1 }),
-      updateCategory(prevCat.id, { sort: cat.sort ?? idx }),
+      updateCategory(cat.id, { sortOrder: prevCat.sortOrder ?? idx - 1 }),
+      updateCategory(prevCat.id, { sortOrder: cat.sortOrder ?? idx }),
     ]);
     fetchCategories();
   } catch {
@@ -204,8 +213,8 @@ async function moveDown(idx: number) {
   const nextCat = categories.value[idx + 1];
   try {
     await Promise.all([
-      updateCategory(cat.id, { sort: nextCat.sort ?? idx + 1 }),
-      updateCategory(nextCat.id, { sort: cat.sort ?? idx }),
+      updateCategory(cat.id, { sortOrder: nextCat.sortOrder ?? idx + 1 }),
+      updateCategory(nextCat.id, { sortOrder: cat.sortOrder ?? idx }),
     ]);
     fetchCategories();
   } catch {

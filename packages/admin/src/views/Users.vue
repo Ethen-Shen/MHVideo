@@ -19,8 +19,11 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="users.length === 0" class="bg-white rounded-lg shadow p-12 text-center text-gray-400">
-      暂无用户数据
+    <div v-else-if="users.length === 0" class="bg-white rounded-lg shadow p-12 text-center">
+      <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+      </svg>
+      <p class="text-gray-400">暂无用户数据</p>
     </div>
 
     <!-- 用户表格 -->
@@ -37,9 +40,9 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(user, idx) in users" :key="user.id" :class="idx % 2 === 1 ? 'bg-gray-50' : ''" class="hover:bg-blue-50">
+          <tr v-for="user in users" :key="user.id" class="border-b last:border-0 hover:bg-gray-50">
             <td class="px-4 py-3">
-              <img v-if="user.avatar" :src="user.avatar" alt="" class="w-9 h-9 rounded-full object-cover" />
+              <img v-if="user.avatarUrl" :src="user.avatarUrl" alt="" class="w-9 h-9 rounded-full object-cover" />
               <div v-else class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-medium">{{ (user.nickname || '?')[0] }}</div>
             </td>
             <td class="px-4 py-3 font-medium text-gray-800">{{ user.nickname || '-' }}</td>
@@ -190,8 +193,8 @@ async function handleConfirmUnban() {
 async function fetchUsers() {
   loading.value = true;
   try {
-    const params: any = { page: page.value, pageSize };
-    if (searchKeyword.value) params.keyword = searchKeyword.value;
+    const params: any = { page: page.value, limit: pageSize };
+    if (searchKeyword.value) params.search = searchKeyword.value;
     if (filterStatus.value) params.status = filterStatus.value;
     const res = (await getAdminUsers(params)) as any;
     const data = res.data ?? res;

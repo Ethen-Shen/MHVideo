@@ -14,19 +14,19 @@
         <!-- Login Form -->
         <form @submit.prevent="handleLogin">
           <div class="mb-5">
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">邮箱</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">账号</label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
+                  <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
                 </svg>
               </div>
               <input
-                v-model="form.email"
-                type="email"
+                v-model="form.account"
+                type="text"
                 required
                 class="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
-                placeholder="admin@mhvideo.com"
+                placeholder="用户名或邮箱"
               />
             </div>
           </div>
@@ -93,7 +93,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const form = reactive({
-  email: '',
+  account: '',
   password: '',
 });
 
@@ -104,10 +104,10 @@ async function handleLogin() {
   loading.value = true;
   error.value = '';
   try {
-    await authStore.login(form.email, form.password);
+    await authStore.login(form.account, form.password);
     router.push('/dashboard');
   } catch (err: unknown) {
-    error.value = '登录失败，请检查邮箱和密码';
+    error.value = '登录失败，请检查账号和密码';
   } finally {
     loading.value = false;
   }

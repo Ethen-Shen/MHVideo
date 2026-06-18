@@ -26,7 +26,7 @@ const refreshTokenSchema = z.object({
 });
 
 const adminLoginSchema = z.object({
-  email: z.string().email('邮箱格式不正确'),
+  account: z.string().min(1, '账号不能为空'),
   password: z.string().min(1, '密码不能为空'),
 });
 
@@ -265,19 +265,21 @@ export async function refreshToken(req: Request, res: Response): Promise<void> {
 // 管理员登录
 export async function adminLogin(req: Request, res: Response): Promise<void> {
   try {
-    const { email, password } = adminLoginSchema.parse(req.body);
+    const { account, password } = adminLoginSchema.parse(req.body);
 
-    // 查找管理员
-    const admin = await prisma.adminUser.findUnique({ where: { email } });
+    // 查找管理员：包含 @ 按 email 查询，否则按 username 查询
+    const admin = account.includes('@')
+      ? await prisma.adminUser.findUnique({ where: { email: account } })
+      : await prisma.adminUser.findUnique({ where: { username: account } });
     if (!admin) {
-      res.status(401).json({ code: 401, message: '邮箱或密码错误' });
+      res.status(401).json({ code: 401, message: '账号或密码错误' });
       return;
     }
 
     // 验证密码
     const isPasswordValid = await bcrypt.compare(password, admin.passwordHash);
     if (!isPasswordValid) {
-      res.status(401).json({ code: 401, message: '邮箱或密码错误' });
+      res.status(401).json({ code: 401, message: '账号或密码错误' });
       return;
     }
 
@@ -294,6 +296,7 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
         refresh_token,
         admin: {
           id: admin.id,
+          username: admin.username,
           email: admin.email,
           role: admin.role,
         },

@@ -26,8 +26,11 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="videos.length === 0" class="bg-white rounded-lg shadow p-12 text-center text-gray-400">
-      暂无视频数据
+    <div v-else-if="videos.length === 0" class="bg-white rounded-lg shadow p-12 text-center">
+      <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+      </svg>
+      <p class="text-gray-400">暂无视频数据</p>
     </div>
 
     <!-- 视频表格 -->
@@ -46,15 +49,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(video, idx) in videos" :key="video.id" :class="idx % 2 === 1 ? 'bg-gray-50' : ''" class="hover:bg-blue-50">
+          <tr v-for="video in videos" :key="video.id" class="border-b last:border-0 hover:bg-gray-50">
             <td class="px-4 py-3">
               <img v-if="video.coverUrl" :src="video.coverUrl" alt="" class="w-16 h-10 object-cover rounded" />
               <div v-else class="w-16 h-10 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">无</div>
             </td>
             <td class="px-4 py-3 font-medium text-gray-800">{{ video.title }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ video.seriesName || '-' }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ video.episode ?? '-' }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ video.playCount ?? 0 }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ video.series?.title || '-' }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ video.episodeNumber ?? '-' }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ formatNumber(video.viewCount) }}</td>
             <td class="px-4 py-3">
               <span :class="video.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'" class="px-2 py-0.5 rounded text-xs">
                 {{ video.status === 'published' ? '已发布' : '草稿' }}
@@ -222,6 +225,12 @@ function formatDate(dateStr: string) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+function formatNumber(n: number | undefined | null) {
+  if (n == null) return '0';
+  if (n >= 10000) return (n / 10000).toFixed(1) + '万';
+  return n.toLocaleString();
+}
+
 function goPage(p: number) {
   if (p < 1 || p > totalPages.value) return;
   page.value = p;
@@ -248,10 +257,10 @@ function openEdit(video: any) {
     coverUrl: video.coverUrl || '',
     videoUrl: video.videoUrl || '',
     duration: video.duration || 0,
-    episode: video.episode || 1,
+    episode: video.episodeNumber || 1,
     seriesId: video.seriesId || '',
     categoryId: video.categoryId || '',
-    tagsStr: Array.isArray(video.tags) ? video.tags.join(',') : (video.tags || ''),
+    tagsStr: Array.isArray(video.tags) ? video.tags.map((t: any) => t.tag).filter(Boolean).join(',') : (video.tags || ''),
   };
   showModal.value = true;
 }
@@ -266,7 +275,7 @@ async function handleSave() {
       coverUrl: form.value.coverUrl,
       videoUrl: form.value.videoUrl,
       duration: form.value.duration,
-      episode: form.value.episode,
+      episodeNumber: form.value.episode,
       seriesId: form.value.seriesId || undefined,
       categoryId: form.value.categoryId,
       tags: form.value.tagsStr ? form.value.tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [],
@@ -325,14 +334,14 @@ async function handleUnpublish(video: any) {
 async function fetchVideos() {
   loading.value = true;
   try {
-    const params: any = { page: page.value, pageSize };
+    const params: any = { page: page.value, limit: pageSize };
     if (searchTitle.value) params.title = searchTitle.value;
-    if (filterCategory.value) params.categoryId = filterCategory.value;
+    if (filterCategory.value) params.category = filterCategory.value;
     if (filterStatus.value) params.status = filterStatus.value;
     const res = (await getVideos(params)) as any;
-    const data = res.data ?? res;
-    videos.value = data.list ?? data.items ?? data.videos ?? [];
-    total.value = data.total ?? videos.value.length;
+    const list = Array.isArray(res.data) ? res.data : (res.data?.list ?? []);
+    videos.value = list;
+    total.value = res.pagination?.total ?? res.total ?? list.length;
   } catch {
     videos.value = [];
     total.value = 0;
@@ -351,9 +360,9 @@ async function fetchCategories() {
 
 async function fetchSeries() {
   try {
-    const res = (await getSeriesList({ pageSize: 200 })) as any;
-    const data = res.data ?? res;
-    seriesList.value = data.list ?? data.items ?? data.series ?? [];
+    const res = (await getSeriesList({ limit: 200 })) as any;
+    const list = Array.isArray(res.data) ? res.data : (res.data?.list ?? []);
+    seriesList.value = list;
   } catch { /* ignore */ }
 }
 

@@ -34,8 +34,8 @@ api.interceptors.response.use(
 );
 
 // 认证 API
-export const adminLogin = (email: string, password: string) =>
-  api.post('/auth/admin-login', { email, password });
+export const adminLogin = (account: string, password: string) =>
+  api.post('/auth/admin-login', { account, password });
 
 // 仪表盘
 export const getDashboard = () => api.get('/admin/dashboard');

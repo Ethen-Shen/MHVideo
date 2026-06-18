@@ -105,7 +105,7 @@
             <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
               {{ adminInitial }}
             </div>
-            <span class="text-sm text-gray-600 hidden sm:inline">{{ adminEmail }}</span>
+            <span class="text-sm text-gray-600 hidden sm:inline">{{ adminDisplayName }}</span>
           </div>
           <button
             class="text-sm text-gray-400 hover:text-red-500 transition-colors flex items-center space-x-1"
@@ -172,13 +172,16 @@ function isActive(path: string) {
   return route.path.startsWith(path);
 }
 
-const adminEmail = computed(() => {
-  return authStore.adminInfo?.email || 'admin@mhvideo.com';
+const adminDisplayName = computed(() => {
+  return authStore.adminInfo?.username || authStore.adminInfo?.email || '管理员';
 });
 
 const adminInitial = computed(() => {
-  const email = adminEmail.value;
-  return email ? email.charAt(0).toUpperCase() : 'A';
+  const username = authStore.adminInfo?.username;
+  if (username) return username.charAt(0).toUpperCase();
+  const email = authStore.adminInfo?.email;
+  if (email) return email.charAt(0).toUpperCase();
+  return 'A';
 });
 
 function handleLogout() {
